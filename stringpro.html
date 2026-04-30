@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="StringPro">
+<meta name="theme-color" content="#1a472a">
+<title>StringPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f7f6f3;
+  --surface:#ffffff;
+  --border:#e8e6e0;
+  --border2:#d0cdc5;
+  --text:#1a1916;
+  --text2:#6b6860;
+  --text3:#9e9c96;
+  --accent:#1a472a;
+  --accent-l:#e8f0eb;
+  --danger:#c0392b;
+  --danger-l:#fdf0ef;
+  --warn:#b7600a;
+  --warn-l:#fef4ea;
+  --info:#1a5276;
+  --info-l:#eaf2fb;
+  --r:10px;
+  --r2:6px;
+  --font:'DM Sans',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:var(--font);font-size:14px;outline:none}
+input:focus,select:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(26,71,42,0.1)}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.logo{font-size:16px;font-weight:600;color:var(--accent)}
+.page-title{font-size:15px;font-weight:500}
+
+/* CONTENT */
+.content{flex:1;padding:14px;overflow-y:auto;padding-bottom:80px}
+.page{display:none}
+.page.active{display:block}
+
+/* BOTTOM NAV */
+.bottomnav{background:var(--surface);border-top:1px solid var(--border);display:flex;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:none;background:none;cursor:pointer}
+.bni-icon{font-size:20px;opacity:0.35}
+.bni-label{font-size:10px;color:var(--text3)}
+.bni.active .bni-icon{opacity:1}
+.bni.active .bni-label{color:var(--accent);font-weight:500}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px}
+.mc-l{font-size:11px;color:var(--text3);margin-bottom:3px}
+.mc-v{font-size:22px;font-weight:600}
+.mc-s{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.card-h{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:500;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+
+/* ROWS */
+.row{padding:11px 14px;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.row-name{font-weight:500}
+.row-detail{font-size:12px;color:var(--text2)}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.b-p{background:var(--warn-l);color:var(--warn)}
+.b-e{background:var(--accent-l);color:var(--accent)}
+.b-i{background:var(--info-l);color:var(--info)}
+.b-d{background:#f0f0f0;color:#555}
+.b-c{background:var(--accent-l);color:var(--accent)}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:var(--r2);font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.15s}
+.btn-p{background:var(--accent);color:#fff;border:none;width:100%;margin-bottom:10px}
+.btn-p:active{opacity:0.85}
+.btn-d{background:var(--surface);color:var(--text);border:1px solid var(--border2)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btns{display:flex;gap:8px}
+
+/* FORM */
+.form-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.form-title{font-weight:500;margin-bottom:12px}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.fl{font-size:12px;font-weight:500;color:var(--text2)}
+.fi{padding:9px 10px;border:1px solid var(--border2);border-radius:var(--r2);font-size:14px;color:var(--text);background:var(--surface);width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* CLIENT ROWS */
+.cr{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.cr:last-child{border-bottom:none}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+
+/* INVENTORY */
+.inv-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border)}
+.inv-row:last-child{border-bottom:none}
+.inv-bar{width:60px;height:3px;background:var(--border);border-radius:2px;margin-top:4px;overflow:hidden}
+.inv-fill{height:100%;border-radius:2px}
+.stock-btns{display:flex;gap:4px;margin-top:6px}
+.sb{width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+
+/* SEARCH */
+.search{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r2);font-size:14px;background:var(--surface);color:var(--text);margin-bottom:12px}
+
+/* ALERT */
+.alert{padding:9px 12px;border-radius:var(--r2);font-size:13px;font-weight:500;margin-bottom:12px}
+.alert-w{background:var(--warn-l);color:var(--warn)}
+
+/* SPINNER */
+.spinner-wrap{display:flex;justify-content:center;padding:40px}
+.spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:32px;margin-bottom:10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1916;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🎾 StringPro</div>
+  <div class="page-title" id="ptitle">Inicio</div>
+</div>
+
+<div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dashboard">
+    <div class="metrics" id="metrics-grid">
+      <div class="mc"><div class="mc-l">Pedidos del mes</div><div class="mc-v" id="m-pedidos">—</div></div>
+      <div class="mc"><div class="mc-l">En proceso</div><div class="mc-v" id="m-proceso" style="color:var(--info)">—</div></div>
+      <div class="mc"><div class="mc-l">Clientes</div><div class="mc-v" id="m-clientes">—</div></div>
+      <div class="mc"><div class="mc-l">Ingresos</div><div class="mc-v" id="m-ingresos" style="color:var(--accent)">—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span>Últimos pedidos</span><button class="btn btn-d btn-sm" onclick="showPage('pedidos')">+ Nuevo</button></div>
+      <div id="dash-pedidos"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+
+  <!-- PEDIDOS -->
+  <div class="page" id="pg-pedidos">
+    <button class="btn btn-p" onclick="toggleForm('form-pedido')">+ Nuevo pedido</button>
+    <div id="form-pedido" style="display:none">
+      <div class="form-wrap">
+        <div class="form-title">Nuevo pedido</div>
+        <div class="fg"><label class="fl">Cliente *</label><select class="fi" id="f-cliente"><option value="">Seleccionar...</option></select></div>
+        <div class="fg"><label class="fl">Cuerda</label><select class="fi" id="f-cuerda"><option value="">Seleccionar...</option></select></div>
+        <div class="fg"><label class="fl">Marca raqueta</label>
+          <select class="fi" id="f-marca">
+            <option value="">Seleccionar...</option>
+            <option>Babolat</option><option>Head</option><option>Wilson</option>
+            <option>Yonex</option><option>Tecnifibre</option><option>Prince</option><option>Otra</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Modelo</label><input class="fi" id="f-modelo" placeholder="ej: Pro Staff 97"></div>
+        <div class="grid2">
+          <div class="fg"><label class="fl">Tensión (kg)</label><input class="fi" id="f-tension" type="number" placeholder="25"></div>
+          <div class="fg"><label class="fl">Precio ($)</label><input class="fi" id="f-precio" type="number" placeholder="8500"></div>
+        </div>
+        <div class="fg"><label class="fl">Estado</label>
+          <select class="fi" id="f-estado">
+            <option value="pendiente">Pendiente</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="listo">Listo</option>
+            <option value="entregado">Entregado</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Fecha entrega</label><input class="fi" id="f-fecha" type="date"></div>
+        <div class="fg"><label class="fl">Notas</label><input class="fi" id="f-notas" placeholder="ej: encordado híbrido..."></div>
+        <div class="btns">
+          <button class="btn btn-p btn-sm" style="width:auto" onclick="savePedido()">Guardar</button>
+          <button class="btn btn-d btn-sm" onclick="toggleForm('form-pedido')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div id="lista-pedidos"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="page" id="pg-clientes">
+    <input class="search" placeholder="Buscar cliente..." oninput="filterClientes(this.value)">
+    <button class="btn btn-p" onclick="toggleForm('form-cliente')">+ Agregar cliente</button>
+    <div id="form-cliente" style="display:none">
+      <div class="form-wrap">
+        <div class="form-title">Nuevo cliente</div>
+        <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="fc-nombre" placeholder="Juan Pérez"></div>
+        <div class="fg"><label class="fl">Teléfono</label><input class="fi" id="fc-tel" placeholder="11 5555-1234"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="fc-email" type="email" placeholder="juan@email.com"></div>
+        <div class="fg"><label class="fl">Zona / Dirección</label><input class="fi" id="fc-dir" placeholder="Palermo, CABA"></div>
+        <div class="fg"><label class="fl">Notas</label><input class="fi" id="fc-notas" placeholder="ej: prefiere cuerdas suaves..."></div>
+        <div class="btns">
+          <button class="btn btn-p btn-sm" style="width:auto" onclick="saveCliente()">Guardar</button>
+          <button class="btn btn-d btn-sm" onclick="toggleForm('form-cliente')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="lista-clientes"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- INVENTARIO -->
+  <div class="page" id="pg-inventario">
+    <div id="alerta-stock"></div>
+    <button class="btn btn-p" onclick="toggleForm('form-cuerda')">+ Agregar cuerda</button>
+    <div id="form-cuerda" style="display:none">
+      <div class="form-wrap">
+        <div class="form-title">Nueva cuerda</div>
+        <div class="fg"><label class="fl">Nombre *</label><input class="fi" id="ci-nombre" placeholder="ALU Power 1.25"></div>
+        <div class="fg"><label class="fl">Marca</label><input class="fi" id="ci-marca" placeholder="Luxilon"></div>
+        <div class="fg"><label class="fl">Tipo</label>
+          <select class="fi" id="ci-tipo">
+            <option value="">Seleccionar...</option>
+            <option>Policéster</option><option>Multifilamento</option><option>Nylon</option><option>Natural</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="fg"><label class="fl">Calibre (mm)</label><input class="fi" id="ci-calibre" placeholder="1.25"></div>
+          <div class="fg"><label class="fl">Precio/set ($)</label><input class="fi" id="ci-precio" type="number" placeholder="4500"></div>
+        </div>
+        <div class="grid2">
+          <div class="fg"><label class="fl">Stock actual</label><input class="fi" id="ci-stock" type="number" placeholder="10"></div>
+          <div class="fg"><label class="fl">Stock mínimo</label><input class="fi" id="ci-min" type="number" placeholder="3"></div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-p btn-sm" style="width:auto" onclick="saveCuerda()">Guardar</button>
+          <button class="btn btn-d btn-sm" onclick="toggleForm('form-cuerda')">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="lista-inventario"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="page" id="pg-historial">
+    <input class="search" placeholder="Buscar por cliente, cuerda, raqueta..." oninput="filterHistorial(this.value)">
+    <div class="card" id="lista-historial"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- FACTURACION -->
+  <div class="page" id="pg-facturacion">
+    <div class="fg" style="margin-bottom:12px">
+      <label class="fl">Mes</label>
+      <input type="month" class="fi" id="mes-selector" onchange="renderFact()">
+    </div>
+    <div class="metrics" id="fact-metrics">
+      <div class="mc"><div class="mc-l">Cobrado</div><div class="mc-v" id="fact-cobrado" style="color:var(--accent)">—</div></div>
+      <div class="mc"><div class="mc-l">Pendiente</div><div class="mc-v" id="fact-pendiente" style="color:var(--warn)">—</div></div>
+      <div class="mc"><div class="mc-l">Total pedidos</div><div class="mc-v" id="fact-total">—</div></div>
+      <div class="mc"><div class="mc-l">Promedio</div><div class="mc-v" id="fact-prom">—</div></div>
+    </div>
+    <div class="card" id="lista-fact"><div class="spinner-wrap"><div class="spinner"></div></div></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottomnav">
+  <button class="bni active" onclick="showPage('dashboard',this,'Inicio')"><span class="bni-icon">⊞</span><span class="bni-label">Inicio</span></button>
+  <button class="bni" onclick="showPage('pedidos',this,'Pedidos')"><span class="bni-icon">◎</span><span class="bni-label">Pedidos</span></button>
+  <button class="bni" onclick="showPage('clientes',this,'Clientes')"><span class="bni-icon">◉</span><span class="bni-label">Clientes</span></button>
+  <button class="bni" onclick="showPage('inventario',this,'Inventario')"><span class="bni-icon">▦</span><span class="bni-label">Inventario</span></button>
+  <button class="bni" onclick="showPage('facturacion',this,'Facturación')"><span class="bni-icon">$</span><span class="bni-label">Facturación</span></button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB = supabase.createClient(
+  'https://oxlbxakijmahmrcimalp.supabase.co',
+  'sb_publishable_6mmlU1skEpwf0M60noXNMA_vQ60j3BW'
+)
+
+let allPedidos = [], allClientes = [], allCuerdas = [], allHistorial = []
+
+function showPage(id, el, title) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.bni').forEach(n => n.classList.remove('active'))
+  document.getElementById('pg-' + id).classList.add('active')
+  if (el) el.classList.add('active')
+  else {
+    const idx = {dashboard:0,pedidos:1,clientes:2,inventario:3,facturacion:4}
+    if (idx[id] !== undefined) document.querySelectorAll('.bni')[idx[id]].classList.add('active')
+  }
+  document.getElementById('ptitle').textContent = title || {dashboard:'Inicio',pedidos:'Pedidos',clientes:'Clientes',inventario:'Inventario',historial:'Historial',facturacion:'Facturación'}[id]
+  if (id === 'dashboard') loadDashboard()
+  if (id === 'pedidos') loadPedidos()
+  if (id === 'clientes') loadClientes()
+  if (id === 'inventario') loadInventario()
+  if (id === 'historial') loadHistorial()
+  if (id === 'facturacion') loadFacturacion()
+}
+
+function toggleForm(id) {
+  const el = document.getElementById(id)
+  el.style.display = el.style.display === 'none' ? 'block' : 'none'
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 2500)
+}
+
+function badge(status) {
+  const map = {
+    pendiente: ['b-p', 'Pendiente'],
+    en_proceso: ['b-i', 'En proceso'],
+    listo: ['b-e', 'Listo'],
+    entregado: ['b-d', 'Entregado'],
+    cobrado: ['b-c', 'Cobrado'],
+  }
+  const [cls, label] = map[status] || ['b-d', status]
+  return `<span class="badge ${cls}">${label}</span>`
+}
+
+function avatarColors(nombre) {
+  const palettes = [
+    ['#e8f0eb','#1a472a'],['#E6F1FB','#185FA5'],
+    ['#FAECE7','#993C1D'],['#EEEDFE','#3C3489'],['#faeeda','#854F0B']
+  ]
+  const idx = nombre.charCodeAt(0) % 5
+  return palettes[idx]
+}
+
+function initials(nombre) {
+  return nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-AR')
+}
+
+// DASHBOARD
+async function loadDashboard() {
+  const now = new Date()
+  const [{ data: p }, { count: c }] = await Promise.all([
+    SB.from('pedidos').select('*, clientes(nombre), cuerdas(nombre)').order('created_at', {ascending: false}).limit(8),
+    SB.from('clientes').select('*', {count:'exact',head:true})
+  ])
+  allPedidos = p || []
+  const mes = allPedidos.filter(x => {
+    const d = new Date(x.created_at)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  })
+  const enProceso = allPedidos.filter(x => x.estado === 'en_proceso').length
+  const ingresos = mes.reduce((a, x) => a + (x.precio || 0), 0)
+  document.getElementById('m-pedidos').textContent = mes.length
+  document.getElementById('m-proceso').textContent = enProceso
+  document.getElementById('m-clientes').textContent = c || 0
+  document.getElementById('m-ingresos').textContent = fmt(ingresos)
+  const cont = document.getElementById('dash-pedidos')
+  if (!allPedidos.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">🎾</div>Sin pedidos todavía</div>'; return }
+  cont.innerHTML = allPedidos.slice(0,5).map(p => `
+    <div class="row">
+      <div class="row-top"><span class="row-name">${p.clientes?.nombre||'—'}</span>${badge(p.estado)}</div>
+      <div class="row-detail">${[p.marca_raqueta,p.modelo_raqueta].filter(Boolean).join(' ')||'—'} · ${p.cuerdas?.nombre||'—'} · ${p.tension_kg?p.tension_kg+'kg':'—'}</div>
+    </div>`).join('')
+}
+
+// PEDIDOS
+async function loadPedidos() {
+  const [{ data: p }, { data: cl }, { data: cu }] = await Promise.all([
+    SB.from('pedidos').select('*, clientes(nombre), cuerdas(nombre)').order('created_at', {ascending:false}),
+    SB.from('clientes').select('id,nombre').order('nombre'),
+    SB.from('cuerdas').select('id,nombre').order('nombre'),
+  ])
+  allPedidos = p || []
+  allClientes = cl || []
+  allCuerdas = cu || []
+  const sel = document.getElementById('f-cliente')
+  sel.innerHTML = '<option value="">Seleccionar...</option>' + allClientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')
+  const selc = document.getElementById('f-cuerda')
+  selc.innerHTML = '<option value="">Seleccionar...</option>' + allCuerdas.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')
+  renderPedidos()
+}
+
+function renderPedidos() {
+  const cont = document.getElementById('lista-pedidos')
+  if (!allPedidos.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">🎾</div>Sin pedidos todavía</div>'; return }
+  cont.innerHTML = '<div class="card">' + allPedidos.map(p => `
+    <div class="row">
+      <div class="row-top"><span class="row-name">${p.clientes?.nombre||'—'}</span>${badge(p.estado)}</div>
+      <div class="row-detail">${[p.marca_raqueta,p.modelo_raqueta].filter(Boolean).join(' ')||'—'} · ${p.cuerdas?.nombre||'—'} · ${p.tension_kg?p.tension_kg+'kg':'—'} ${p.precio?'· '+fmt(p.precio):''}</div>
+      ${p.notas?`<div class="row-detail" style="margin-top:2px;font-style:italic">${p.notas}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn btn-d btn-sm" onclick="delPedido('${p.id}')">Borrar</button>
+        <button class="btn btn-d btn-sm" onclick="cambiarEstado('${p.id}','${p.estado}')">Cambiar estado</button>
+      </div>
+    </div>`).join('') + '</div>'
+}
+
+async function savePedido() {
+  const cid = document.getElementById('f-cliente').value
+  if (!cid) return alert('Seleccioná un cliente')
+  const data = {
+    cliente_id: cid,
+    cuerda_id: document.getElementById('f-cuerda').value || null,
+    marca_raqueta: document.getElementById('f-marca').value,
+    modelo_raqueta: document.getElementById('f-modelo').value,
+    tension_kg: parseFloat(document.getElementById('f-tension').value) || null,
+    precio: parseFloat(document.getElementById('f-precio').value) || null,
+    estado: document.getElementById('f-estado').value,
+    fecha_entrega: document.getElementById('f-fecha').value || null,
+    notas: document.getElementById('f-notas').value,
+  }
+  await SB.from('pedidos').insert(data)
+  toast('Pedido guardado')
+  toggleForm('form-pedido')
+  loadPedidos()
+}
+
+async function delPedido(id) {
+  if (!confirm('¿Eliminar este pedido?')) return
+  await SB.from('pedidos').delete().eq('id', id)
+  toast('Pedido eliminado')
+  loadPedidos()
+}
+
+async function cambiarEstado(id, actual) {
+  const estados = ['pendiente','en_proceso','listo','entregado']
+  const sig = estados[(estados.indexOf(actual)+1) % estados.length]
+  await SB.from('pedidos').update({estado:sig}).eq('id',id)
+  toast('Estado actualizado')
+  loadPedidos()
+}
+
+// CLIENTES
+async function loadClientes() {
+  const [{ data: cl }, { data: ped }] = await Promise.all([
+    SB.from('clientes').select('*').order('nombre'),
+    SB.from('pedidos').select('cliente_id'),
+  ])
+  allClientes = cl || []
+  const counts = {}
+  for (const p of ped||[]) counts[p.cliente_id] = (counts[p.cliente_id]||0)+1
+  allClientes._counts = counts
+  filterClientes('')
+}
+
+function filterClientes(q) {
+  const cont = document.getElementById('lista-clientes')
+  const filtered = allClientes.filter(c =>
+    c.nombre.toLowerCase().includes(q.toLowerCase()) ||
+    (c.telefono||'').includes(q) ||
+    (c.email||'').toLowerCase().includes(q.toLowerCase())
+  )
+  const counts = allClientes._counts || {}
+  if (!filtered.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">◉</div>Sin clientes</div>'; return }
+  cont.innerHTML = filtered.map(c => {
+    const [bg,color] = avatarColors(c.nombre)
+    const n = counts[c.id]||0
+    return `<div class="cr">
+      <div class="av" style="background:${bg};color:${color}">${initials(c.nombre)}</div>
+      <div style="flex:1">
+        <div style="font-weight:500">${c.nombre}</div>
+        <div style="font-size:12px;color:var(--text2)">${[c.telefono,c.email,c.direccion].filter(Boolean).join(' · ')||'Sin datos'}</div>
+        ${c.notas?`<div style="font-size:12px;color:var(--text3);font-style:italic">${c.notas}</div>`:''}
+      </div>
+      <div style="text-align:right;font-size:12px">
+        <div style="color:var(--text2)">${n} enc.</div>
+        ${n>=10?'<div style="color:var(--accent);font-size:11px">Frecuente</div>':''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+async function saveCliente() {
+  const nombre = document.getElementById('fc-nombre').value.trim()
+  if (!nombre) return alert('El nombre es obligatorio')
+  await SB.from('clientes').insert({
+    nombre,
+    telefono: document.getElementById('fc-tel').value,
+    email: document.getElementById('fc-email').value,
+    direccion: document.getElementById('fc-dir').value,
+    notas: document.getElementById('fc-notas').value,
+  })
+  toast('Cliente guardado')
+  toggleForm('form-cliente')
+  loadClientes()
+}
+
+// INVENTARIO
+async function loadInventario() {
+  const { data } = await SB.from('cuerdas').select('*').order('nombre')
+  allCuerdas = data || []
+  renderInventario()
+}
+
+function renderInventario() {
+  const bajo = allCuerdas.filter(c => (c.stock||0) <= (c.stock_minimo||3))
+  const alertEl = document.getElementById('alerta-stock')
+  alertEl.innerHTML = bajo.length ? `<div class="alert alert-w">⚠ ${bajo.length} ${bajo.length===1?'cuerda con stock bajo':'cuerdas con stock bajo'}</div>` : ''
+  const cont = document.getElementById('lista-inventario')
+  if (!allCuerdas.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">▦</div>Sin cuerdas</div>'; return }
+  cont.innerHTML = allCuerdas.map(c => {
+    const bajo = (c.stock||0) <= (c.stock_minimo||3)
+    const pct = Math.min(100, ((c.stock||0)/Math.max((c.stock_minimo||3)*3,1))*100)
+    const color = bajo ? 'var(--warn)' : 'var(--accent)'
+    return `<div class="inv-row" ${bajo?'style="background:var(--warn-l)"':''}>
+      <div>
+        <div style="font-weight:500">${c.nombre}</div>
+        <div style="font-size:12px;color:var(--text2)">${[c.marca,c.tipo,c.calibre?c.calibre+'mm':null].filter(Boolean).join(' · ')||'—'}</div>
+        <div style="font-size:12px;color:var(--text2)">${c.precio_set?fmt(c.precio_set)+'/set':''}</div>
+        <div class="inv-bar"><div class="inv-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:500;color:${color}">${c.stock||0} sets</div>
+        <div class="stock-btns">
+          <button class="sb" onclick="ajustarStock('${c.id}',-1)">−</button>
+          <button class="sb" onclick="ajustarStock('${c.id}',1)">+</button>
+        </div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+async function ajustarStock(id, delta) {
+  const c = allCuerdas.find(x => x.id === id)
+  const nuevo = Math.max(0, (c.stock||0) + delta)
+  await SB.from('cuerdas').update({stock:nuevo}).eq('id',id)
+  c.stock = nuevo
+  renderInventario()
+}
+
+async function saveCuerda() {
+  const nombre = document.getElementById('ci-nombre').value.trim()
+  if (!nombre) return alert('El nombre es obligatorio')
+  await SB.from('cuerdas').insert({
+    nombre,
+    marca: document.getElementById('ci-marca').value,
+    tipo: document.getElementById('ci-tipo').value,
+    calibre: document.getElementById('ci-calibre').value,
+    precio_set: parseFloat(document.getElementById('ci-precio').value)||null,
+    stock: parseInt(document.getElementById('ci-stock').value)||0,
+    stock_minimo: parseInt(document.getElementById('ci-min').value)||3,
+  })
+  toast('Cuerda guardada')
+  toggleForm('form-cuerda')
+  loadInventario()
+}
+
+// HISTORIAL
+async function loadHistorial() {
+  const { data } = await SB.from('pedidos').select('*, clientes(nombre), cuerdas(nombre)').order('created_at',{ascending:false})
+  allHistorial = data || []
+  filterHistorial('')
+}
+
+function filterHistorial(q) {
+  const cont = document.getElementById('lista-historial')
+  const filtered = allHistorial.filter(p =>
+    (p.clientes?.nombre||'').toLowerCase().includes(q.toLowerCase()) ||
+    (p.cuerdas?.nombre||'').toLowerCase().includes(q.toLowerCase()) ||
+    (p.marca_raqueta||'').toLowerCase().includes(q.toLowerCase()) ||
+    (p.modelo_raqueta||'').toLowerCase().includes(q.toLowerCase())
+  )
+  if (!filtered.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">☰</div>Sin registros</div>'; return }
+  cont.innerHTML = filtered.map(p => `
+    <div class="row">
+      <div class="row-top"><span class="row-name">${p.clientes?.nombre||'—'}</span>${badge(p.estado)}</div>
+      <div class="row-detail">${new Date(p.created_at).toLocaleDateString('es-AR')} · ${[p.marca_raqueta,p.modelo_raqueta].filter(Boolean).join(' ')||'—'}</div>
+      <div class="row-detail">${p.cuerdas?.nombre||'—'} · ${p.tension_kg?p.tension_kg+'kg':'—'} ${p.precio?'· '+fmt(p.precio):''}</div>
+    </div>`).join('')
+}
+
+// FACTURACION
+async function loadFacturacion() {
+  const now = new Date()
+  const mes = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`
+  document.getElementById('mes-selector').value = mes
+  const { data } = await SB.from('pedidos').select('*, clientes(nombre), cuerdas(nombre)').order('created_at',{ascending:false})
+  allPedidos = data || []
+  renderFact()
+}
+
+function renderFact() {
+  const mes = document.getElementById('mes-selector').value
+  if (!mes) return
+  const [y,m] = mes.split('-').map(Number)
+  const del = allPedidos.filter(p => {
+    const d = new Date(p.created_at)
+    return d.getFullYear()===y && d.getMonth()+1===m
+  })
+  const cobrados = del.filter(p => p.estado==='cobrado'||p.estado==='entregado')
+  const pendientes = del.filter(p => p.estado!=='cobrado'&&p.estado!=='entregado'&&p.precio)
+  const cobrado = cobrados.reduce((a,p)=>a+(p.precio||0),0)
+  const pendiente = pendientes.reduce((a,p)=>a+(p.precio||0),0)
+  const prom = cobrados.length ? Math.round(cobrado/cobrados.length) : 0
+  document.getElementById('fact-cobrado').textContent = fmt(cobrado)
+  document.getElementById('fact-pendiente').textContent = fmt(pendiente)
+  document.getElementById('fact-total').textContent = del.length
+  document.getElementById('fact-prom').textContent = fmt(prom)
+  const cont = document.getElementById('lista-fact')
+  if (!del.length) { cont.innerHTML = '<div class="empty"><div class="empty-icon">$</div>Sin pedidos este mes</div>'; return }
+  cont.innerHTML = '<div class="card-h" style="padding:10px 14px;font-weight:500;font-size:13px">Detalle</div>' + del.map(p => `
+    <div class="row">
+      <div class="row-top"><span class="row-name">${p.clientes?.nombre||'—'}</span><span style="font-weight:500">${p.precio?fmt(p.precio):'—'}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+        <span class="row-detail">${p.cuerdas?.nombre||'—'} · ${p.tension_kg?p.tension_kg+'kg':'—'}</span>
+        ${badge(p.estado)}
+      </div>
+      ${p.precio?`<button class="btn btn-d btn-sm" style="margin-top:6px" onclick="toggleCobrado('${p.id}','${p.estado}')">${p.estado==='cobrado'?'Desmarcar':'Marcar cobrado'}</button>`:''}
+    </div>`).join('')
+}
+
+async function toggleCobrado(id, estado) {
+  const nuevo = estado==='cobrado' ? 'entregado' : 'cobrado'
+  await SB.from('pedidos').update({estado:nuevo}).eq('id',id)
+  toast('Estado actualizado')
+  loadFacturacion()
+}
+
+// INIT
+loadDashboard()
+</script>
+</body>
+</html>
